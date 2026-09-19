@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -83,6 +84,7 @@ class Tools:
         self._d = deps
         self._baseline: AuthorBaseline = baseline_for(deps.demo_handle, deps.own_posts.column("like_count").to_pylist())
         self._mined: list[Template] | None = None
+        self._mine_lock = threading.Lock()
         self._runners: dict[str, Callable[[Session, dict[str, Any]], ToolResult]] = {
             "listen": self._listen,
             "explain": self._explain,
@@ -111,10 +113,16 @@ class Tools:
     # Listen and Explain
     # -----------------------------------------------------------------
 
+    def warm(self) -> int:
+        """Mine the window's templates now, so the first question is not the slow one; returns how many."""
+        return len(self._templates(Session()))
+
     def _templates(self, session: Session) -> list[Template]:
-        # The window is fixed for the life of the server, so mine it once and share it across conversations.
-        if self._mined is None:
-            self._mined = listen_tool(self._d.tweets, min_authors=5, max_templates=20)
+        # The window is fixed for the life of the server, so mine it once and share it across conversations;
+        # the lock keeps six first questions from mining six times.
+        with self._mine_lock:
+            if self._mined is None:
+                self._mined = listen_tool(self._d.tweets, min_authors=5, max_templates=20, embedder=self._d.embedder)
         session.templates = self._mined
         return self._mined
 

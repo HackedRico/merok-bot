@@ -99,6 +99,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or load_settings()
     deps = build_deps(settings)
     tools = Tools(deps)
+    t = time.time()
+    log.info("[api] %s templates mined in %.0fs", tools.warm(), time.time() - t)
     app = FastAPI(title="merok-bot", version="0.1.0")
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
     app.state.merok = State(settings=settings, deps=deps, tools=tools, sessions={})
