@@ -45,9 +45,15 @@ def test_model_beats_predict_the_median_on_held_out_rows(traction: Traction, spl
     assert ev.beats_baseline, f"model MAE {ev.mae_model:.3f} vs median baseline {ev.mae_median_baseline:.3f}"
 
 
-def test_forecast_is_relative_and_explained(traction: Traction) -> None:
-    author = baseline_for("sensanders", [300, 450, 500, 700, 1200])
+def test_forecast_is_relative_and_explained(traction: Traction, gov_table: pa.Table) -> None:
+    author = author_baselines(gov_table, author_col="author_handle")["sensanders"]
     ctx = Context(posted_at=datetime(2026, 9, 19, 14, 0, tzinfo=timezone.utc), has_media=False, has_link=False, template_velocity=24)
     f = traction.predict("Do you remember when you joined X? I do! Thursday's town hall is at 6pm.", author, ctx)
-    assert f.likes_1d >= 0 and f.relative_to_median > 0
+    # A known account is forecast around its own median, never at the firehose's few-likes level.
+    assert 0.2 < f.relative_to_median < 5.0
+    assert abs(f.likes_1d - author.median_likes * f.relative_to_median) < 1e-6
+    assert f.likes_1h is None or f.likes_1h <= f.likes_1d
     assert 1 <= len(f.drivers) <= 5 and all(d.detail for d in f.drivers)
+
+    unknown = traction.predict("gm", baseline_for("nobody", []), ctx)
+    assert unknown.likes_1d >= 0 and unknown.relative_to_median == unknown.likes_1d / 1.0

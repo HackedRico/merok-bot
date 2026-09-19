@@ -25,7 +25,9 @@ from tools.score.baseline import leave_one_out_medians
 
 HOUR_WINDOW_MIN = 60.0
 MIN_ROWS_1H = 500
+ANCHOR_HISTORY = 20
 _TIME_FEATURES = ("hour_sin", "hour_cos")
+_AUTHOR_FEATURES = ("author_median_log", "author_history_known")
 
 
 @dataclass(frozen=True, slots=True)
@@ -124,14 +126,35 @@ class Traction:
         feats = F.features_for(text, author, context, self._embedder)
         row = F.matrix_from(feats)
         log_1d = float(self._model_1d.predict(row)[0])
-        likes_1d = max(math.expm1(log_1d), 0.0)
-        likes_1h = max(math.expm1(float(self._model_1h.predict(row)[0])), 0.0) if self._model_1h is not None else None
+        raw_1d = max(math.expm1(log_1d), 0.0)
+        raw_1h = max(math.expm1(float(self._model_1h.predict(row)[0])), 0.0) if self._model_1h is not None else None
+
+        if author.posts >= ANCHOR_HISTORY:
+            # The firehose rarely shows an author with thousands of likes, so the model's absolute level is
+            # not trusted for a known account. The model supplies the multiplier: this post against a typical
+            # post by the same author, with its content and timing swapped for the training medians.
+            log_typical = float(self._model_1d.predict(self._typical(row))[0])
+            relative = math.exp(log_1d - log_typical)
+            likes_1d = author.median_likes * relative
+            likes_1h = likes_1d * min(raw_1h / raw_1d, 1.0) if raw_1h is not None and raw_1d > 0 else None
+        else:
+            relative = raw_1d / max(author.median_likes, 1.0)
+            likes_1d, likes_1h = raw_1d, raw_1h
+
         return Forecast(
             likes_1d=likes_1d,
             likes_1h=likes_1h,
-            relative_to_median=likes_1d / max(author.median_likes, 1.0),
+            relative_to_median=relative,
             drivers=self._drivers(row, log_1d),
         )
+
+    def _typical(self, row: np.ndarray) -> np.ndarray:
+        """The same author, a typical post: content and timing features at the training medians, embedding at the mean."""
+        out = F.swap_embedding(row, self._mean_embedding)
+        for i, name in enumerate(F.NAMES):
+            if name not in _AUTHOR_FEATURES:
+                out[0, i] = float(self._medians[i])
+        return out
 
     def _drivers(self, row: np.ndarray, log_pred: float, top: int = 5) -> tuple[Driver, ...]:
         """Counterfactual effects: swap each named feature for the training median, and the embedding for its mean."""
