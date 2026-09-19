@@ -184,11 +184,12 @@ class Clip:
 
 @dataclass(frozen=True, slots=True)
 class PostId:
-    """Where a post went and how to find it again."""
+    """Where a post went, how to find it again, and when it went out."""
 
     platform: str
     id: str
     url: str | None
+    posted_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)

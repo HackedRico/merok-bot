@@ -18,6 +18,7 @@ def test_health_names_every_adapter(client: TestClient) -> None:
     h = client.get("/health").json()
     assert h["status"] == "ok" and h["data_source"] == "fixture" and h["rows"] > 50_000
     assert h["llm"] == "fake" and h["voice"] == "silent" and h["publisher"] == "dry_run" and h["poller"] == "replay"
+    assert h["x_configured"] is False and h["x_budget_usd"] == 10.0
     assert h["baseline"]["author"] == "sensanders"
 
 

@@ -209,8 +209,13 @@ class Tools:
         post = self._d.publisher.post(candidate.text)
         session.post = post
         session.posted_forecast = session.forecasts[index - 1] if index - 1 < len(session.forecasts) else None
-        where = "the dry run" if post.platform == "dry_run" else post.platform
-        return ToolResult(f"Posted draft {index} to {where} as {post.id}.", (Attachment("post", {"post": to_json(post), "text": candidate.text}),))
+        if post.platform == "x":
+            head = f"Posted draft {index} to X: {post.url}"
+        elif post.id == "clipboard":
+            head = f"Draft {index} is on your clipboard for {post.platform}; the X credentials are not set, so nothing was posted."
+        else:
+            head = f"Posted draft {index} to {post.platform} as {post.id}."
+        return ToolResult(head, (Attachment("post", {"post": to_json(post), "text": candidate.text}),))
 
     def _learn(self, session: Session, args: dict[str, Any]) -> ToolResult:
         if session.post is None:

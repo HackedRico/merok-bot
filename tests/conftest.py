@@ -21,7 +21,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 @pytest.fixture(scope="session")
 def settings() -> Settings:
-    return load_settings(env={"MEROK_DATA_SOURCE": "fixture"}, repo_root=ROOT)
+    # Tests run on the test adapters by name; the app's defaults are the real ones.
+    return load_settings(env={"MEROK_DATA_SOURCE": "fixture", "MEROK_PUBLISHER": "dry_run", "MEROK_POLLER": "replay"}, repo_root=ROOT)
 
 
 @pytest.fixture(scope="session")

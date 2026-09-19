@@ -64,7 +64,7 @@ merok-bot/
 │   ├── listen/                  -> Template, Sound
 │   │   ├── CLAUDE.md
 │   │   ├── __init__.py          listen(tweets, min_authors) -> list[Template]; sounds(videos) -> list[Sound]
-│   │   ├── cluster.py           exact match first, MinHash for mutations
+│   │   ├── cluster.py           exact match, then near-duplicate groups folded by embedding similarity
 │   │   ├── curve.py             distinct authors per hour; creators per hour by music id
 │   │   └── spam.py              SpamVerdict from author repetition, links, zero views
 │   ├── explain/                 -> Explanation
@@ -97,13 +97,13 @@ merok-bot/
 │   ├── ship/                    -> PostId
 │   │   ├── CLAUDE.md
 │   │   ├── __init__.py          Publisher protocol: post(text) -> PostId
-│   │   ├── x_api.py             adapter: pay per use, budget cap validated before the call
+│   │   ├── x_api.py             adapter: POST /2/tweets, OAuth 1.0a signed here, spend ledger, cap checked first
 │   │   ├── clipboard.py         adapter: TikTok, Instagram, LinkedIn export
 │   │   └── dry_run.py           adapter: rehearsal, returns a fake PostId
 │   └── learn/                   -> Curve, Comparison
 │       ├── CLAUDE.md
 │       ├── __init__.py          observe(post, minutes, source) -> Curve; compare(curve, forecast) -> Comparison
-│       ├── x_poll.py            adapter: X API once a minute
+│       ├── x_poll.py            adapter: one metrics read per call, points accumulate per post
 │       └── replay.py            adapter: a firehose trajectory from shared.data.curves()
 │
 ├── chat/                        the orchestrator
@@ -341,9 +341,11 @@ move to whoever finishes first on Saturday afternoon.
 Publisher.post(text: str) -> PostId
 ```
 
-Three adapters: X pay-per-use API, clipboard export for TikTok, Instagram and LinkedIn,
-dry-run fake. Real seam. The X adapter is the only code that spends money; it validates a
-budget cap up front and raises before calling out.
+Three adapters, and X is the default. `XPublisher` posts through `POST /2/tweets` with OAuth
+1.0a user context signed in the standard library, keeps a ledger of spend on disk, and refuses
+a post that would cross `MEROK_X_BUDGET_USD` before any request goes out. `ClipboardPublisher`
+is for TikTok, Instagram and LinkedIn, whose posting APIs lock unaudited apps out, and is the
+fallback when the X credentials are unset. `DryRunPublisher` exists for tests.
 
 ### `tools.learn`
 
@@ -352,9 +354,11 @@ observe(post: PostId, minutes: int = 30, source: Poller) -> Curve
 compare(curve: Curve, forecast: Forecast) -> Comparison
 ```
 
-Hides polling cadence and rate limits. `Poller` has the X adapter and a replay adapter that
-serves a firehose trajectory from `shared.data.curves`, so the demo screen can be rehearsed
-without posting.
+`Poller` has two adapters. `XPoller` reads the post's like count once per call through a
+function `api/` hands it, so asking "how did it do?" again and again draws the real curve in
+the minutes since posting without a chat request ever blocking. `ReplayPoller` serves a
+firehose trajectory from `shared.data.curves` for rehearsal and is the fallback when X is not
+configured.
 
 ### `chat`, the orchestrator
 
@@ -405,8 +409,9 @@ ships from a notebook.
 - The government file writes `'0'` for an original post's `in_reply_to_tweet_id`.
 - Homebrew's ffmpeg has no text filter; captions are Pillow PNGs overlaid per time window.
 - The TikTok dataset is gated on Hugging Face; sounds wait for a token.
-- Three crypto templates in chart 1 are near-duplicates of one another. Merging mutations
-  (MinHash or an embedding threshold before aggregation) is the next Listen improvement.
+- Variants of one copy (a swapped link, a greeting, a number) showed up as separate
+  templates. Listen now folds groups whose normalised texts embed within 0.75 cosine, with
+  union-find so chains merge; the hourly curves of merged variants are summed.
 
 ## The local MVP configuration
 
@@ -420,8 +425,8 @@ MEROK_LLM_API_KEY=                                  # unset: the offline fake, d
 MEROK_LLM_MODEL=
 MEROK_VOICE=silent
 MEROK_VISUALS=loops
-MEROK_PUBLISHER=dry_run
-MEROK_POLLER=replay
+MEROK_PUBLISHER=x            # falls back to clipboard until the X_* credentials are set
+MEROK_POLLER=x               # falls back to replay likewise
 EXPO_PUBLIC_API_URL=http://localhost:8000
 ```
 

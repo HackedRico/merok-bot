@@ -18,8 +18,8 @@ DATA_SOURCES = ("local", "fixture")
 EMBEDDERS = ("hash", "nomic")
 VOICES = ("silent", "elevenlabs")
 VISUALS = ("loops", "still", "veo")
-PUBLISHERS = ("dry_run", "clipboard", "x")
-POLLERS = ("replay", "x")
+PUBLISHERS = ("x", "clipboard", "dry_run")
+POLLERS = ("x", "replay")
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,10 +35,20 @@ class Settings:
     visuals: str
     publisher: str
     poller: str
+    x_consumer_key: str
+    x_consumer_secret: str
+    x_access_token: str
+    x_access_token_secret: str
+    x_budget_usd: float
     demo_handle: str
     window_files: int
     cache_dir: Path
     fixtures_dir: Path
+
+    @property
+    def x_configured(self) -> bool:
+        """True when all four X credentials are set; posting and polling need OAuth 1.0a user context."""
+        return all((self.x_consumer_key, self.x_consumer_secret, self.x_access_token, self.x_access_token_secret))
 
     @property
     def llm_configured(self) -> bool:
@@ -50,6 +60,14 @@ def _choice(env: Mapping[str, str], key: str, allowed: tuple[str, ...], default:
     value = env.get(key, default).strip() or default
     if value not in allowed:
         raise ValueError(f"{key} must be one of {allowed}, got {value!r}")
+    return value
+
+
+def _positive_float(env: Mapping[str, str], key: str, default: float) -> float:
+    raw = env.get(key, "").strip()
+    value = float(raw) if raw else default
+    if value <= 0:
+        raise ValueError(f"{key} must be positive, got {value}")
     return value
 
 
@@ -76,8 +94,13 @@ def load_settings(env: Mapping[str, str] | None = None, repo_root: Path | None =
         embedder=_choice(env, "MEROK_EMBEDDER", EMBEDDERS, "hash"),
         voice=_choice(env, "MEROK_VOICE", VOICES, "silent"),
         visuals=_choice(env, "MEROK_VISUALS", VISUALS, "loops"),
-        publisher=_choice(env, "MEROK_PUBLISHER", PUBLISHERS, "dry_run"),
-        poller=_choice(env, "MEROK_POLLER", POLLERS, "replay"),
+        publisher=_choice(env, "MEROK_PUBLISHER", PUBLISHERS, "x"),
+        poller=_choice(env, "MEROK_POLLER", POLLERS, "x"),
+        x_consumer_key=env.get("X_CONSUMER_KEY", "").strip(),
+        x_consumer_secret=env.get("X_CONSUMER_SECRET", "").strip(),
+        x_access_token=env.get("X_ACCESS_TOKEN", "").strip(),
+        x_access_token_secret=env.get("X_ACCESS_TOKEN_SECRET", "").strip(),
+        x_budget_usd=_positive_float(env, "MEROK_X_BUDGET_USD", 10.0),
         demo_handle=env.get("MEROK_DEMO_HANDLE", "sensanders").strip().lower(),
         window_files=_positive_int(env, "MEROK_WINDOW_FILES", 6),
         cache_dir=(root / env.get("MEROK_CACHE_DIR", ".cache")).resolve(),

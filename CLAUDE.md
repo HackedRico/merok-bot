@@ -69,6 +69,10 @@ cd app && npm install && npx expo start --web                   # http://localho
   funds the Vertex backend. The Gemini app student plan does not fund the API. Free credits
   only: `MEROK_VEO_BACKEND=gemini`, `MEROK_VEO_BUDGET_USD=10`, and the adapter refuses a
   call that would cross the cap.
+- Posting is live by default: `MEROK_PUBLISHER=x` with the four `X_*` credentials (OAuth 1.0a
+  user context, write permission) posts for real on pay-per-use, inside `MEROK_X_BUDGET_USD`
+  and a ledger at `.cache/x_ledger.json`. Without the credentials the publisher falls back to
+  the clipboard and Learn to replay, and `/health` says so. The dry run exists for tests.
 - The bucket is public, no credentials:
   `https://calcifer-hot.s3.us-east-2.amazonaws.com/hopkins-hackathon-2026/`. Read one hour
   file at a time over HTTPS; DuckDB does it in 8 seconds. The month is 55.7 GB and stays

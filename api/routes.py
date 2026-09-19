@@ -60,6 +60,8 @@ def health(request: Request) -> dict:
         "visuals": st.deps.visuals.name,
         "publisher": st.deps.publisher.name,
         "poller": st.deps.poller.name,
+        "x_configured": st.settings.x_configured,
+        "x_budget_usd": st.settings.x_budget_usd,
         "baseline": to_json(st.tools.baseline),
     }
 

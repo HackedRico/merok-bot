@@ -10,7 +10,7 @@ from tools.learn.replay import ReplayPoller
 def test_replay_serves_a_real_early_trajectory(hour_table: pa.Table) -> None:
     poller = ReplayPoller(hour_table, seed=1)
     assert poller.available > 10
-    curve = observe(PostId("dry_run", "abc", None), minutes=14 * 24 * 60, source=poller)
+    curve = observe(PostId("dry_run", "abc", None), minutes=60 * 24 * 60, source=poller)
     assert len(curve.points) >= 3
     assert [p.minutes for p in curve.points] == sorted(p.minutes for p in curve.points)
 

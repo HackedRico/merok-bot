@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import pyarrow as pa
 
+from shared.embed import Embedder, HashEmbedder
 from shared.types import Sound, Template
-from tools.listen.cluster import cluster_templates, cluster_sounds
+from tools.listen.cluster import cluster_sounds, cluster_templates, merge_variants
 from tools.listen.curve import hour_curve
 from tools.listen.spam import verdict
 
@@ -16,13 +17,13 @@ from tools.listen.spam import verdict
 # TikTok music ids. Both are pure over the table they are handed.
 
 
-def listen(tweets: pa.Table, min_authors: int = 5, max_templates: int = 50, min_chars: int = 20) -> list[Template]:
-    """Templates posted verbatim by `min_authors` or more distinct accounts, most replicated first."""
+def listen(tweets: pa.Table, min_authors: int = 5, max_templates: int = 50, min_chars: int = 20, embedder: Embedder | None = None) -> list[Template]:
+    """Templates posted by `min_authors` or more distinct accounts, near-duplicates folded, most replicated first."""
     if min_authors < 2:
         raise ValueError("min_authors must be at least 2; one author is a post, not a template")
     if tweets.num_rows == 0:
         return []
-    rows = cluster_templates(tweets, min_authors=min_authors, min_chars=min_chars)
+    rows = merge_variants(cluster_templates(tweets, min_authors=min_authors, min_chars=min_chars), embedder or HashEmbedder())
     templates = [
         Template(
             text=row["text"],
@@ -30,7 +31,7 @@ def listen(tweets: pa.Table, min_authors: int = 5, max_templates: int = 50, min_
             authors=row["authors"],
             posts=row["posts"],
             first_seen=row["first_seen"],
-            first_authors=tuple(row["first_authors"]),
+            first_authors=tuple(row["author_ids"][:5]),
             sample_ids=tuple(row["sample_ids"]),
             curve=hour_curve(row["curve"]),
             spam=verdict(

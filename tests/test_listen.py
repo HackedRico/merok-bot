@@ -28,6 +28,14 @@ def test_organic_and_paid_replication_are_told_apart(hour_table: pa.Table) -> No
     assert airdrop.spam.is_spam, airdrop.spam.reasons
 
 
+def test_near_duplicate_copy_is_one_template(hour_table: pa.Table) -> None:
+    templates = listen(hour_table, min_authors=5)
+    heads = [t.normalised[:30] for t in templates]
+    assert len(heads) == len(set(heads)), "the same copy with a swapped link must fold into one template"
+    grok = [t for t in templates if "report card" in t.normalised]
+    assert len(grok) == 1 and grok[0].authors >= 40, "the report-card prompt's phrasings fold into one"
+
+
 def test_sounds_are_templates_on_tiktok() -> None:
     t0 = datetime(2026, 9, 1, tzinfo=timezone.utc)
     rows = []

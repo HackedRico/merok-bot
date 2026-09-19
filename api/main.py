@@ -13,10 +13,10 @@ from shared.data import make_source
 from shared.data.cache import LocalSource
 from shared.embed import make_embedder
 from shared.llm import make_llm
-from tools.learn.replay import ReplayPoller
+from tools.learn import Poller, ReplayPoller, XPoller
 from tools.render import LoopsVisuals, SilentVoice
 from tools.score import Traction
-from tools.ship import ClipboardPublisher, DryRunPublisher
+from tools.ship import ClipboardPublisher, DryRunPublisher, Publisher, XPublisher
 
 # =============================================================================
 # Module Overview
@@ -51,6 +51,7 @@ def build_deps(settings: Settings) -> Deps:
 
     clip_dir = settings.cache_dir / "clips"
     clip_dir.mkdir(parents=True, exist_ok=True)
+    publisher, poller = build_ship_and_learn(settings, tweets)
     return Deps(
         tweets=tweets,
         own_posts=own_posts,
@@ -60,10 +61,31 @@ def build_deps(settings: Settings) -> Deps:
         traction=traction,
         voice=SilentVoice() if settings.voice == "silent" else _elevenlabs(),
         visuals=LoopsVisuals(),
-        publisher=ClipboardPublisher() if settings.publisher == "clipboard" else DryRunPublisher(),
-        poller=ReplayPoller(tweets, seed=None),
+        publisher=publisher,
+        poller=poller,
         clip_dir=clip_dir,
     )
+
+
+def build_ship_and_learn(settings: Settings, tweets) -> tuple[Publisher, Poller]:
+    """The real X adapters when the four credentials are set; otherwise the clipboard and replay, with a warning."""
+    if settings.publisher == "x" or settings.poller == "x":
+        if settings.x_configured:
+            x = XPublisher(settings.x_consumer_key, settings.x_consumer_secret, settings.x_access_token, settings.x_access_token_secret, settings.x_budget_usd, settings.cache_dir)
+            publisher: Publisher = x if settings.publisher == "x" else _publisher(settings)
+            poller: Poller = XPoller(x.likes) if settings.poller == "x" else ReplayPoller(tweets)
+            log.info("[api] X configured: posting live inside a $%.2f cap, $%.2f spent so far", settings.x_budget_usd, x.spent_usd())
+            return publisher, poller
+        log.warning("[api] MEROK_PUBLISHER=x but the X_* credentials are unset; posts go to the clipboard and Learn replays until they are.")
+        return ClipboardPublisher(), ReplayPoller(tweets)
+    return _publisher(settings), ReplayPoller(tweets)
+
+
+def _publisher(settings: Settings) -> Publisher:
+    if settings.publisher == "clipboard":
+        return ClipboardPublisher()
+    # The dry run is a test adapter; choosing it in .env is deliberate and says so in /health.
+    return DryRunPublisher()
 
 
 def _elevenlabs():

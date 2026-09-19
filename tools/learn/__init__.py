@@ -3,6 +3,7 @@ from __future__ import annotations
 from shared.types import Comparison, Curve, Forecast, PostId
 from tools.learn.poller import Poller
 from tools.learn.replay import ReplayPoller
+from tools.learn.x_poll import XPoller
 
 # =============================================================================
 # Module Overview
@@ -13,7 +14,7 @@ from tools.learn.replay import ReplayPoller
 # sees a tweet hours to days after it is posted, so the comparison names the
 # checkpoint the curve actually reached instead of assuming thirty minutes.
 
-__all__ = ["observe", "compare", "Poller", "ReplayPoller"]
+__all__ = ["observe", "compare", "Poller", "ReplayPoller", "XPoller"]
 
 HALF_HOUR = 30.0
 DAY = 24 * 60.0

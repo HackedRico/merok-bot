@@ -40,10 +40,12 @@ class ReplayPoller:
         if not rows:
             raise ValueError("no tweet in the table has enough snapshots to replay")
         self._trajectories = {r[0]: [CurvePoint(float(p["minutes"]), int(p["likes"])) for p in r[1]] for r in rows}
+        # DuckDB returns groups in no fixed order, so a seeded choice is only repeatable over a sorted list.
+        self._ids = sorted(self._trajectories)
         self._rng = random.Random(seed)
 
     def trajectory(self, post: PostId, minutes: float) -> Sequence[CurvePoint]:
-        chosen = self._trajectories[self._rng.choice(list(self._trajectories))]
+        chosen = self._trajectories[self._rng.choice(self._ids)]
         within = [p for p in chosen if p.minutes <= minutes]
         # If the window is shorter than the first observation, show the earliest point anyway; an empty curve says nothing.
         return within or chosen[:1]
