@@ -69,6 +69,13 @@ calibration story: known followers, known party, known baseline.
 Part 1 is built and runs on one laptop: 36 tests green on fixtures, the seven tools behind
 the chat, the API, the Expo desktop app, both charts. Commits are on main.
 
+Later Saturday morning: live posting is the default (`MEROK_PUBLISHER=x`, OAuth 1.0a, a $10
+cap and a ledger), with clipboard and replay as the fallbacks until the X credentials are set;
+the dry run exists for tests only. The Featherless model is wired (`unsloth/Meta-Llama-3.1-8B-
+Instruct`). A pressure test (`scripts/pressure.py`, six conversations at once plus fifteen
+hostile inputs) passes with zero problems; templates are mined at startup so the first
+question is instant, a draft takes about ten seconds on the 8B model, a clip about five.
+
 Chart 2 as measured is a null result: the share of official congressional posts using the
 slang and meme-format lexicon is flat at about one percent since 2019, and the lift of those
 posts over the same account's other posts hovers around one. The dataset is Congress plus
