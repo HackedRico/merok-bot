@@ -62,3 +62,11 @@ def test_to_json_flattens_frozen_values() -> None:
     j = to_json(t)
     assert j["first_seen"].startswith("2026-08-29")
     assert j["spam"]["reasons"] == ["few links"]
+
+
+def test_slang_lexicon_matches_whole_words_only() -> None:
+    from shared.slang import slang_hits, uses_slang
+
+    assert slang_hits("POV: you lowkey love the farm bill 💀") == ("pov:", "lowkey", "💀")
+    assert not uses_slang("The capital budget passed.")
+    assert not uses_slang("recapitulate")
