@@ -40,6 +40,12 @@ def _state(request: Request) -> State:
     return request.app.state.merok
 
 
+@router.get("/")
+def root() -> dict:
+    """A bare visit gets pointed at the app and the useful routes instead of a 404."""
+    return {"this": "the merok-bot API", "app": "http://localhost:8081", "health": "/health", "routes": "/docs", "chat": "POST /chat"}
+
+
 @router.get("/health")
 def health(request: Request) -> dict:
     st = _state(request)

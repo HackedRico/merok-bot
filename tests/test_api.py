@@ -33,6 +33,10 @@ def test_chat_keeps_a_conversation(client: TestClient) -> None:
     assert client.post("/reset/" + cid).json()["reset"] is True
 
 
+def test_root_points_at_the_app(client: TestClient) -> None:
+    assert client.get("/").json()["app"].endswith(":8081")
+
+
 def test_tools_and_clips_routes(client: TestClient) -> None:
     names = [t["name"] for t in client.get("/tools").json()]
     assert names == ["listen", "explain", "draft", "score", "render", "ship", "learn"]
