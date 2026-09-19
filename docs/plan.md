@@ -67,9 +67,9 @@ calibration story: known followers, known party, known baseline.
 ## Two parts
 
 Decided September 19: Part 1 is a working MVP on one laptop, every seam on its local
-adapter, no accounts and no keys. Part 2 swaps in real adapters one config string at a time,
-in this order: ElevenLabs voice, a hosted model for drafts, Veo for the finale shot, live X
-posting, the phone through a droplet or tunnel, the domain. The Friday-night keys list below
+adapter, no accounts and no keys beyond the Featherless model key. Part 2 swaps in real
+adapters one config string at a time, in this order: ElevenLabs voice, Veo for the finale
+shot, live X posting, the phone through a droplet or tunnel, the domain. The Friday-night keys list below
 belongs to Part 2 except the month pull and the press office pick.
 
 ## Development plan
@@ -78,7 +78,7 @@ Repo created Friday 22:18. Devpost due Sunday 9 AM. About 34 working hours acros
 
 | Phase | Hours | Done when |
 |---|---|---|
-| 0. Scaffold | Fri night | `uv` project, DuckDB reads one firehose hour over HTTPS, fixtures committed, the import-rule test, root and tool `CLAUDE.md` files, Ollama pulled, README with the problem statement |
+| 0. Scaffold | Fri night | `uv` project, DuckDB reads one firehose hour over HTTPS, fixtures committed, the import-rule test, root and tool `CLAUDE.md` files, README with the problem statement |
 | 1. Listen | Sat morning | Templates mined from one day, distinct-author curves plotted, spam split by author repetition, the 28-at-five-plus number reproduced. Opening chart exists. |
 | 2. Score, Draft and Explain, in parallel | Sat midday | Traction model beats "predict the author's median" on held-out September tweets. Drafts in a press office's voice pass the embedding classifier at near chance. Explanations of the day's top twenty templates make sense to a teammate who has not seen them. |
 | 3. Government chart | Sat afternoon | Per-account, per-month template share against the same account's non-template posts. Second chart exists. |
@@ -148,8 +148,9 @@ afternoon, and whoever finishes first takes Render.
 Part 1 only. Part 2's accounts wait until the MVP is tagged.
 
 1. Team size and slots. Default: four.
-2. The MVP model. Default: Ollama with llama3.1:8b, no key, the judge's own model class;
-   the MLH Gemini key is the first Part 2 flip after voice.
+2. The MVP model. Decided: Ricky's Featherless endpoint, an OpenAI-compatible base URL, key
+   and model name in `.env`; without them the offline fake keeps the loop running with
+   placeholder drafts.
 3. The demo press office. Default: slot A picks the account with the most tweets and a
    consistent house style.
 

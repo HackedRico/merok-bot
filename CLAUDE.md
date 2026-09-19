@@ -5,15 +5,22 @@ instrument that demonstrates it. Read docs/architecture.md before touching `shar
 `tools/`, `chat/` or `api/`. It holds every tool's interface and the reason behind the layout. docs/plan.md holds the schedule and
 the cut order. docs/prior-art.md holds what the judge has read.
 
-## Layout
+## Run
 
-Phase 0 builds this. Update this file when it lands.
+```
+uv sync && cp .env.example .env
+uv run pytest                                                   # fixtures only, no network
+uv run uvicorn api.main:create_app_from_env --factory --port 8000
+cd app && npm install && npx expo start --web                   # http://localhost:8081
+```
+
+## Layout
 
 - Four Python packages at the repo root, no wrapper. They import as themselves:
   `from shared.types import Template`, `from tools.draft import draft`.
 - `shared/` is everything more than one tool needs: `types.py` (frozen values that cross
-  tool lines), `text.py`, `embed.py`, `config.py`, `data/` (the lake seam), `llm/` (the
-  model seam).
+  tool lines), `text.py`, `embed.py`, `slang.py`, `config.py`, `data/` (the lake seam),
+  `llm/` (the model seam: any OpenAI-compatible endpoint, or the offline fake).
 - `tools/<verb>/` one directory per chat verb: listen, explain, draft, score, render, ship,
   learn. Each carries a CLAUDE.md: interface, invariants, gotchas, test command.
 - `chat/` routes one message to one tool. `api/` serves it and is the only place that reads

@@ -46,7 +46,8 @@ merok-bot/
 │   ├── types.py                 frozen values that cross tool lines: Template, Sound, SpamVerdict, Explanation,
 │   │                            Candidate, Exemplars, Forecast, Driver, Clip, PostId, Curve, Comparison, Reply
 │   ├── text.py                  normalise(): lower, strip URLs, handles, hashtags
-│   ├── embed.py                 embed(texts) -> vectors, nomic-embed, cached in DuckDB
+│   ├── embed.py                 embed(texts) -> vectors; hashing by default, nomic-embed behind the same protocol
+│   ├── slang.py                 the slang and meme-format lexicon chart 2 counts
 │   ├── config.py                env -> Settings; read only by api/ and scripts/, passed in everywhere else
 │   ├── data/                    the lake seam
 │   │   ├── __init__.py          firehose(), gov_tweets(), tiktok(), latest(), curves()
@@ -55,8 +56,8 @@ merok-bot/
 │   │   └── cache.py             materialise into .cache/merok.duckdb
 │   └── llm/                     the model seam
 │       ├── __init__.py          LLM protocol: complete(system, messages) -> str
-│       ├── litellm_adapter.py   any endpoint; model name comes from config
-│       └── fake.py              canned replies so no test hits the network
+│       ├── openai_compat.py     any OpenAI-compatible endpoint: base URL, key, model name from config
+│       └── fake.py              canned replies so no test hits the network; offline placeholders for a keyless demo
 │
 ├── tools/                       one directory per chat verb; a tool imports shared and nothing else in the repo
 │   ├── __init__.py
@@ -90,12 +91,9 @@ merok-bot/
 │   │   ├── tts.py               Voice protocol: speak(text) -> audio + word timestamps
 │   │   ├── elevenlabs.py        adapter: real voice, timestamps from the API
 │   │   ├── silent.py            adapter: no audio, uniform timings, for tests
-│   │   ├── visuals.py           Visuals protocol: generate(brief, seconds) -> background video path
-│   │   ├── loops.py             adapter: a shipped loop, instant, free, the default and the test adapter
-│   │   ├── still.py             adapter: one generated image plus ffmpeg motion, seconds and cents
-│   │   ├── veo.py               adapter: Veo 3.1 Fast through the Gemini API, text to video, minutes and dollars
-│   │   ├── compose.py           ffmpeg: 1080x1920, captions burned over the background, voice as the audio track
-│   │   └── backgrounds/         three short loops shipped with the repo
+│   │   ├── visuals.py           Visuals protocol plus LoopsVisuals: an ffmpeg gradient, instant, free, offline
+│   │   ├── compose.py           ffmpeg: 1080x1920, Pillow-drawn captions overlaid, voice or silence as the audio track
+│   │   └── (Part 2)             still.py and veo.py behind the same Visuals protocol
 │   ├── ship/                    -> PostId
 │   │   ├── CLAUDE.md
 │   │   ├── __init__.py          Publisher protocol: post(text) -> PostId
@@ -110,14 +108,16 @@ merok-bot/
 │
 ├── chat/                        the orchestrator
 │   ├── CLAUDE.md
-│   ├── __init__.py              respond(history, tools, llm) -> Reply
-│   └── tools.py                 seven declarations, one per tools/ directory, no logic
+│   ├── __init__.py              respond(message, session, tools, llm) -> Reply
+│   ├── router.py                rules first, the model as a JSON choice second, draft third
+│   ├── session.py               what a conversation remembers, so "post the third one" resolves
+│   └── tools.py                 seven declarations bound to their adapters; reply text is built from the values
 │
 ├── api/                         FastAPI
 │   ├── CLAUDE.md
 │   ├── __init__.py
-│   ├── main.py                  app factory: builds adapters from config, wires them in
-│   └── routes.py                /chat plus one route per tool
+│   ├── main.py                  app factory: builds adapters from config, warms templates and the model
+│   └── routes.py                /chat, /health, /tools, /clips/{name}
 │
 ├── analysis/                    the two pitch charts; imports tools and shared, adds only plotting
 │   ├── template_curves.py       chart 1: distinct authors per hour, organic vs paid
@@ -151,14 +151,11 @@ merok-bot/
 │       ├── screens/Chat.tsx
 │       └── components/          CurveCard, DraftCard, ExplainCard, ForecastBadge, ClipCard (plays, share sheet)
 │
-├── deploy/
-│   ├── Dockerfile               FastAPI plus ffmpeg on the DigitalOcean droplet
-│   └── run.sh
-│
 ├── scripts/
-│   ├── pull_month.py            background pull of English originals into .cache
-│   ├── pull_sounds.py           one TikTok shard, music id columns only, into .cache
-│   └── make_fixture.py          cut the fixtures from a bucket file and a shard
+│   ├── pull_month.py            background pull of English originals into .cache, resumable
+│   ├── pull_gov.py              the government file, one download
+│   ├── pull_sounds.py           one TikTok shard, music id columns only; needs HF_TOKEN, the set is gated
+│   └── make_fixture.py          cut the fixtures from a bucket file
 │
 └── docs/
     ├── architecture.md
@@ -218,17 +215,21 @@ share and the language mix. It earns its keep.
 LLM.complete(system: str, messages: list[Message]) -> str
 ```
 
-One method. Two adapters: LiteLLM, which speaks one call shape to Anthropic, Gemini, xAI and
-OpenAI so the model is a config string, and a canned fake so no test touches the network.
-Explain, Draft and the chat all take an `LLM` as an argument. LangChain was considered and
-rejected: it brings chains, memory and tool abstractions the app does not use, and every
-line of a dependency's surface the team touches has to be explainable at the table.
+One method. Two adapters: `OpenAICompatLLM`, which speaks to any OpenAI-compatible endpoint
+(Featherless, Gemini, Anthropic, OpenAI) so a base URL, a key and a model name are the whole
+configuration, and `FakeLLM`, which keeps tests off the network and gives a keyless demo
+visibly marked placeholders. Explain, Draft and the chat all take an `LLM` as an argument.
+LiteLLM was in the first plan and was dropped: the endpoint the team has is OpenAI-compatible
+and the plain client drops about a hundred transitive dependencies. LangChain was rejected
+for the same reason, plus abstractions the app does not use.
 
 ### `shared.text`, `shared.embed`, `shared.types`
 
 Module-level functions with no state. Listen, Explain, Draft and Score all need identical
 normalisation and identical vectors; `types.py` holds every frozen value that crosses a tool
-line. Splitting these out is what stops four people writing four normalisers.
+line. The default embedder is character n-gram hashing through scikit-learn: deterministic,
+offline, 100k posts a second; nomic-embed sits behind the same protocol for Part 2. Splitting
+these out is what stops four people writing four normalisers.
 
 ### `tools.listen`
 
@@ -393,6 +394,20 @@ reading a function should get its reason from names and one comment, not from a 
 Uncommitted notebooks are fine as scratch. Nothing in `shared/`, `tools/`, `chat/` or `api/`
 ships from a notebook.
 
+## What was learned building it
+
+- The firehose first observes a tweet hours to days after creation (median about two days),
+  so a "first thirty minutes" curve does not exist in the data. Learn replays the real
+  trajectory in real hours and names the checkpoint it compares at.
+- The firehose almost never shows an account with thousands of likes, so a known account's
+  forecast is anchored to its own median with the model as the multiplier against a typical
+  post by that account.
+- The government file writes `'0'` for an original post's `in_reply_to_tweet_id`.
+- Homebrew's ffmpeg has no text filter; captions are Pillow PNGs overlaid per time window.
+- The TikTok dataset is gated on Hugging Face; sounds wait for a token.
+- Three crypto templates in chart 1 are near-duplicates of one another. Merging mutations
+  (MinHash or an embedding threshold before aggregation) is the next Listen improvement.
+
 ## The local MVP configuration
 
 Part 1 of the plan is the whole loop on one laptop with every seam on its local adapter.
@@ -400,7 +415,9 @@ Part 1 of the plan is the whole loop on one laptop with every seam on its local 
 
 ```
 MEROK_DATA_SOURCE=local        # local DuckDB file; "fixture" in tests
-MEROK_LLM_MODEL=ollama/llama3.1:8b
+MEROK_LLM_BASE_URL=https://api.featherless.ai/v1   # any OpenAI-compatible endpoint
+MEROK_LLM_API_KEY=                                  # unset: the offline fake, drafts are placeholders
+MEROK_LLM_MODEL=
 MEROK_VOICE=silent
 MEROK_VISUALS=loops
 MEROK_PUBLISHER=dry_run
