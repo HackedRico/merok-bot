@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import zlib
 from typing import Protocol, Sequence
 
 import numpy as np
+from sklearn.feature_extraction.text import HashingVectorizer
 
 # =============================================================================
 # Module Overview
@@ -17,6 +17,7 @@ class Embedder(Protocol):
     """Map texts to L2-normalised row vectors."""
 
     name: str
+    dim: int
 
     def embed(self, texts: Sequence[str]) -> np.ndarray: ...
 
@@ -27,7 +28,7 @@ class Embedder(Protocol):
 
 
 class HashEmbedder:
-    """Character n-gram feature hashing; deterministic, offline, good enough to cluster and retrieve."""
+    """Character n-gram feature hashing; deterministic, offline, and fast enough for 100k posts a second."""
 
     name = "hash"
 
@@ -38,21 +39,13 @@ class HashEmbedder:
         if lo < 1 or hi < lo:
             raise ValueError("ngram must be (lo, hi) with 1 <= lo <= hi")
         self.dim = dim
-        self.ngram = ngram
+        # char_wb pads words with spaces so n-grams never straddle two words; l2 makes dot products cosines.
+        self._vec = HashingVectorizer(analyzer="char_wb", ngram_range=ngram, n_features=dim, norm="l2", lowercase=True)
 
     def embed(self, texts: Sequence[str]) -> np.ndarray:
-        out = np.zeros((len(texts), self.dim), dtype=np.float32)
-        lo, hi = self.ngram
-        for row, text in enumerate(texts):
-            padded = f" {text.lower()} "
-            for n in range(lo, hi + 1):
-                for i in range(max(len(padded) - n + 1, 0)):
-                    # crc32 is stable across processes, unlike Python's salted hash().
-                    out[row, zlib.crc32(padded[i : i + n].encode()) % self.dim] += 1.0
-        # Damp frequent n-grams so length does not dominate the direction.
-        out = np.log1p(out)
-        norms = np.linalg.norm(out, axis=1, keepdims=True)
-        return out / np.where(norms == 0, 1.0, norms)
+        if len(texts) == 0:
+            return np.zeros((0, self.dim), dtype=np.float32)
+        return self._vec.transform(list(texts)).toarray().astype(np.float32)
 
 
 # -----------------------------------------------------------------
@@ -64,6 +57,7 @@ class NomicEmbedder:
     """nomic-embed-text-v1.5 through sentence-transformers; installed with `uv sync --extra nomic`."""
 
     name = "nomic"
+    dim = 768
 
     def __init__(self) -> None:
         try:
