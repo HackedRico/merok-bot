@@ -1,0 +1,15 @@
+.cache/
+.env
+*.duckdb
+*.duckdb.wal
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+analysis/out/*
+!analysis/out/.gitkeep
+app/node_modules/
+app/.expo/
+app/dist/
+app/web-build/
+.DS_Store
