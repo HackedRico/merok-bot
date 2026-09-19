@@ -82,6 +82,7 @@ class Tools:
     def __init__(self, deps: Deps) -> None:
         self._d = deps
         self._baseline: AuthorBaseline = baseline_for(deps.demo_handle, deps.own_posts.column("like_count").to_pylist())
+        self._mined: list[Template] | None = None
         self._runners: dict[str, Callable[[Session, dict[str, Any]], ToolResult]] = {
             "listen": self._listen,
             "explain": self._explain,
@@ -111,9 +112,11 @@ class Tools:
     # -----------------------------------------------------------------
 
     def _templates(self, session: Session) -> list[Template]:
-        if not session.templates:
-            session.templates = listen_tool(self._d.tweets, min_authors=5, max_templates=20)
-        return session.templates
+        # The window is fixed for the life of the server, so mine it once and share it across conversations.
+        if self._mined is None:
+            self._mined = listen_tool(self._d.tweets, min_authors=5, max_templates=20)
+        session.templates = self._mined
+        return self._mined
 
     def _listen(self, session: Session, args: dict[str, Any]) -> ToolResult:
         templates = self._templates(session)

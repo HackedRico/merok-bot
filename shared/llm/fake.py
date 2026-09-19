@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Callable, Sequence
 
 from shared.types import Message
@@ -38,8 +39,12 @@ class FakeLLM:
 
         def answer(system: str, messages: Sequence[Message]) -> str:
             last = messages[-1].content if messages else ""
-            if "Return JSON" in system or "JSON" in system[:200]:
+            if system.startswith("You route"):
                 return '{"tool": null}'
+            if system.startswith("You write posts"):
+                # Five visibly fake drafts so the loop, the scoring and the clip still run end to end.
+                intent = last.split("Write 5 different posts that:", 1)[-1].split("\n", 1)[0].strip() or "the post"
+                return json.dumps([{"text": f"[offline draft {i}] {intent}", "why": "no model key set"} for i in range(1, 6)])
             return f"[offline model] No model key is set, so this is a placeholder for: {last[:120]}"
 
         return cls(answer)

@@ -27,17 +27,20 @@ class HourCount:
     posts: int
 
 
+SPAM_THRESHOLD = 0.5
+
+
 @dataclass(frozen=True, slots=True)
 class SpamVerdict:
     """How much a template's replication looks paid rather than organic, with the reasons."""
 
     score: float
     reasons: tuple[str, ...]
+    # Stored, not a property, so it serialises with the rest; set from `score` at construction.
+    is_spam: bool = False
 
-    @property
-    def is_spam(self) -> bool:
-        """True above the midpoint; the split is shown, never silently applied."""
-        return self.score >= 0.5
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "is_spam", self.score >= SPAM_THRESHOLD)
 
 
 @dataclass(frozen=True, slots=True)

@@ -32,9 +32,9 @@ class ReplayPoller:
         con.register("c", traj)
         rows = con.execute(
             f"""
-            SELECT id, list(struct_pack(minutes := minutes, likes := like_count) ORDER BY minutes) AS pts
+            SELECT id, list(struct_pack(minutes := minutes, likes := coalesce(like_count, 0)) ORDER BY minutes) AS pts
             FROM c WHERE minutes >= 0
-            GROUP BY id HAVING count(*) >= {MIN_POINTS} AND max(like_count) > 0
+            GROUP BY id HAVING count(*) >= {MIN_POINTS} AND max(coalesce(like_count, 0)) > 0
             """
         ).fetchall()
         if not rows:
