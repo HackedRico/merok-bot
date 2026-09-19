@@ -40,6 +40,11 @@ Phase 0 builds this. Update this file when it lands.
 - Firehose rows repeat per `(id, version)`. Latest version for state, group by id for curves.
 - Half the rows are retweets and 26 percent are English. Originals are `lang = 'en'`, body
   not starting `RT @`, `reply_to_status_id` null.
+- In the government file `in_reply_to_tweet_id` is the string `'0'` for an original post, not
+  null. Treat null, empty and `'0'` as "not a reply".
+- Firehose repeat snapshots arrive days after a tweet is created (median first observation
+  about two days in), so "the first thirty minutes" mostly does not exist in the data. Learn
+  compares at whatever checkpoint the curve reaches and names it.
 - 64 percent of tweets have zero likes. Predict log likes or beats-own-median.
 - Tweets created after September 10 have not matured. Label only older ones.
 - Airdrop spam tops naive template mining. Split by author repetition, links and zero views,
