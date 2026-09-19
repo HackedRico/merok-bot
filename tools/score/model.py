@@ -136,7 +136,8 @@ class Traction:
             log_typical = float(self._model_1d.predict(self._typical(row))[0])
             relative = math.exp(log_1d - log_typical)
             likes_1d = author.median_likes * relative
-            likes_1h = likes_1d * min(raw_1h / raw_1d, 1.0) if raw_1h is not None and raw_1d > 0 else None
+            # When the hour model predicts at or above the day model, the hour figure carries no information; leave it out.
+            likes_1h = likes_1d * (raw_1h / raw_1d) if raw_1h is not None and raw_1d > 0 and raw_1h < raw_1d else None
         else:
             relative = raw_1d / max(author.median_likes, 1.0)
             likes_1d, likes_1h = raw_1d, raw_1h
