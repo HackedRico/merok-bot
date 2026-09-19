@@ -13,3 +13,5 @@ app/.expo/
 app/dist/
 app/web-build/
 .DS_Store
+!analysis/out/template_curves.png
+!analysis/out/gov_memes.png

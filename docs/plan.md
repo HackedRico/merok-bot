@@ -64,6 +64,20 @@ repeat snapshots that give engagement trajectories, which Score and Learn need, 
 the three weeks after the government set ends on August 24. The government set is the
 calibration story: known followers, known party, known baseline.
 
+## Status, Saturday September 19, early morning
+
+Part 1 is built and runs on one laptop: 36 tests green on fixtures, the seven tools behind
+the chat, the API, the Expo desktop app, both charts. Commits are on main.
+
+Chart 2 as measured is a null result: the share of official congressional posts using the
+slang and meme-format lexicon is flat at about one percent since 2019, and the lift of those
+posts over the same account's other posts hovers around one. The dataset is Congress plus
+executive principals; it excludes the White House and agency accounts (@WhiteHouse, DHS, ICE)
+that the sponsor's slide and the Pew piece are about. Pitch options: present the contrast
+(Congress did not learn to meme; the executive did, and the data we have shows the first
+half), or pull those institutional accounts from the firehose by author id for the last
+month. Ricky's call.
+
 ## Two parts
 
 Decided September 19: Part 1 is a working MVP on one laptop, every seam on its local
