@@ -36,6 +36,7 @@ class Settings:
     publisher: str
     poller: str
     demo_handle: str
+    window_files: int
     cache_dir: Path
     fixtures_dir: Path
 
@@ -49,6 +50,14 @@ def _choice(env: Mapping[str, str], key: str, allowed: tuple[str, ...], default:
     value = env.get(key, default).strip() or default
     if value not in allowed:
         raise ValueError(f"{key} must be one of {allowed}, got {value!r}")
+    return value
+
+
+def _positive_int(env: Mapping[str, str], key: str, default: int) -> int:
+    raw = env.get(key, "").strip()
+    value = int(raw) if raw else default
+    if value < 1:
+        raise ValueError(f"{key} must be a positive integer, got {value}")
     return value
 
 
@@ -70,6 +79,7 @@ def load_settings(env: Mapping[str, str] | None = None, repo_root: Path | None =
         publisher=_choice(env, "MEROK_PUBLISHER", PUBLISHERS, "dry_run"),
         poller=_choice(env, "MEROK_POLLER", POLLERS, "replay"),
         demo_handle=env.get("MEROK_DEMO_HANDLE", "sensanders").strip().lower(),
+        window_files=_positive_int(env, "MEROK_WINDOW_FILES", 6),
         cache_dir=(root / env.get("MEROK_CACHE_DIR", ".cache")).resolve(),
         fixtures_dir=(root / "tests" / "fixtures").resolve(),
     )

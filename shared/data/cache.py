@@ -34,6 +34,13 @@ class LocalSource:
         self.fallback = fallback
         self._con = duckdb.connect()
 
+    def cached_files(self) -> list[int]:
+        """Indexes of the hour files materialised so far, in time order."""
+        directory = self.cache_dir / FIREHOSE_DIR
+        if not directory.is_dir():
+            return []
+        return sorted(int(p.stem.split("-")[-1]) for p in directory.glob("tweets-*.parquet"))
+
     def firehose(self, files: Sequence[int] | None = None, lang: str | None = "en", originals_only: bool = True) -> pa.Table:
         directory = self.cache_dir / FIREHOSE_DIR
         parts = sorted(directory.glob("*.parquet")) if directory.is_dir() else []
