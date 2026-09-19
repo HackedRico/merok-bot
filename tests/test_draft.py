@@ -28,6 +28,14 @@ def test_draft_returns_five_candidates_from_json(gov_table: pa.Table, embedder: 
     assert ex.posts[0] in llm.calls[0][0]
 
 
+def test_parser_repairs_the_escaped_quotes_small_models_write() -> None:
+    raw = "Here you go:\n[" + ", ".join(
+        '{"text": "Tonight at 6pm, let\\\'s talk. Draft %d", "why": "call to action"}' % i for i in range(1, 6)
+    ) + "]"
+    texts = [t for t, _ in parse_candidates(raw)]
+    assert len(texts) == 5 and texts[0].startswith("Tonight at 6pm, let's talk.")
+
+
 def test_parser_falls_back_to_numbered_lines_and_refuses_too_few() -> None:
     lines = "\n".join(f"{i}. Draft {i} here" for i in range(1, 6))
     assert [t for t, _ in parse_candidates(lines)] == [f"Draft {i} here" for i in range(1, 6)]

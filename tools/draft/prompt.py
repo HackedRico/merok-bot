@@ -37,8 +37,8 @@ def request(intent: str, template: Template | None) -> str:
         )
     return (
         f"Write {DRAFT_COUNT} different posts that: {intent.strip()}{ride}\n"
-        f"Each post is at most {MAX_CHARS} characters. Return JSON only: a list of {DRAFT_COUNT} objects "
-        f'with keys "text" and "why", where "why" is one short sentence on the choice made.'
+        f"Each post is at most {MAX_CHARS} characters, with no links and no placeholders. Return JSON only: "
+        f'a list of {DRAFT_COUNT} objects with keys "text" and "why", where "why" is one short sentence on the choice made.'
     )
 
 
@@ -51,14 +51,28 @@ def parse_candidates(raw: str) -> list[tuple[str, str]]:
     return pairs[:DRAFT_COUNT]
 
 
+_TEXT_FIELD = re.compile(r'"text"\s*:\s*"((?:[^"\\]|\\.)*)"')
+_WHY_FIELD = re.compile(r'"why"\s*:\s*"((?:[^"\\]|\\.)*)"')
+
+
 def _parse_json(raw: str) -> list[tuple[str, str]]:
     start, end = raw.find("["), raw.rfind("]")
     if start < 0 or end <= start:
         return []
-    try:
-        items = json.loads(raw[start : end + 1])
-    except json.JSONDecodeError:
-        return []
+    body = raw[start : end + 1]
+    items = None
+    # Small models write \' inside strings, which JSON does not allow; the second try repairs just that.
+    for attempt in (body, body.replace("\\'", "'")):
+        try:
+            items = json.loads(attempt)
+            break
+        except json.JSONDecodeError:
+            continue
+    if items is None:
+        # Last resort: pull the "text" and "why" fields out by pattern, which survives most broken quoting.
+        texts = [json.loads(f'"{m}"') if '\\' in m else m for m in _TEXT_FIELD.findall(body)]
+        whys = _WHY_FIELD.findall(body)
+        return [(t, whys[i] if i < len(whys) else "") for i, t in enumerate(texts)]
     out: list[tuple[str, str]] = []
     for item in items:
         if isinstance(item, dict) and isinstance(item.get("text"), str):
