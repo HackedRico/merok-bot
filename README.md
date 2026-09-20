@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="docs/img/app-draft.png" alt="merok-bot drafting five posts in a senator's voice, each with a forecast" width="820">
-</p>
-
 <h1 align="center">merok-bot</h1>
 
 <p align="center">
@@ -22,6 +18,10 @@
 </p>
 
 ---
+
+<p align="center">
+  <img src="docs/img/app-draft.png" alt="merok-bot drafting five posts in a senator's voice, each with a forecast" width="820">
+</p>
 
 ## What it is
 
