@@ -1,23 +1,18 @@
-<h1 align="center">merok-bot</h1>
+# merok-bot
 
-<p align="center"><strong>Post things that spread. See why they do.</strong></p>
+**Post things that spread. See why they do.**
 
-<p align="center">
-  Every post is a bet placed blind. merok-bot watches a month of the X firehose for the patterns
-  people are copying right now, writes in your own voice on top of them, tells you how a draft
-  will do before you post it and why, and shows you the real curve afterwards.<br>
-  The finding underneath it: on X, the thing that spreads is not the post. It is the template.
-</p>
+Every post is a bet placed blind. merok-bot watches a month of the X firehose for the patterns
+people are copying right now, writes in your own voice on top of them, tells you how a draft
+will do before you post it and why, and shows you the real curve afterwards.
 
-<p align="center">
-  <sub>Built for the Best Memetics Hack track at <a href="https://hophacks-fall-2026.devpost.com/">HopHacks 2026</a>, Johns Hopkins University, September 18 to 20,
-  on datasets from <a href="https://www.calcifercomputing.com/hophacks">Calcifer Computing</a>.</sub>
-</p>
+The finding underneath it: on X, the thing that spreads is not the post. It is the template.
 
-<p align="center">
-  <img src="docs/img/app-draft.png" alt="Five drafts in a senator's voice, each with a forecast against the account's own median" width="820"><br>
-  <sub>"Help me announce Thursday's town hall." Five drafts in the account's voice, two riding a live template, each scored against the account's own median with the reason.</sub>
-</p>
+<sub>Built for the Best Memetics Hack track at [HopHacks 2026](https://hophacks-fall-2026.devpost.com/), Johns Hopkins University, September 18 to 20, on datasets from [Calcifer Computing](https://www.calcifercomputing.com/hophacks).</sub>
+
+<img src="docs/img/app-draft.png" alt="Five drafts in a senator's voice, each with a forecast against the account's own median" width="820">
+
+<sub>"Help me announce Thursday's town hall." Five drafts in the account's voice, two riding a live template, each scored against the account's own median with the reason.</sub>
 
 ## Why
 
@@ -26,10 +21,9 @@ accounts fill in. In one hour of the firehose, thirty distinct texts were posted
 by five or more accounts. Over a day the largest reached 686. Some of that replication is
 people; some of it is paid, and the accounts tell them apart.
 
-<p align="center">
-  <img src="analysis/out/template_curves.png" alt="Distinct accounts per hour for the top templates in one day of the firehose" width="820"><br>
-  <sub>Distinct accounts per hour, one day of the firehose. Solid lines are organic memes; dashed lines are crypto copy that bursts and dies.</sub>
-</p>
+<img src="analysis/out/template_curves.png" alt="Distinct accounts per hour for the top templates in one day of the firehose" width="820">
+
+<sub>Distinct accounts per hour, one day of the firehose. Solid lines are organic memes; dashed lines are crypto copy that bursts and dies.</sub>
 
 merok-bot turns that observation into a tool: find what is spreading now, write in your own
 voice on top of it, know how it will do before you post, and see what happened after.
@@ -50,11 +44,7 @@ Seven verbs, one chat. Every button in the app sends one of these sentences.
 
 <details>
 <summary>Screenshots of listen and explain</summary>
-<p align="center">
-  <img src="docs/img/app-listen.png" alt="The listen card" width="400">
-  &nbsp;
-  <img src="docs/img/app-explain.png" alt="The explain card" width="400" align="top">
-</p>
+<img src="docs/img/app-listen.png" alt="The listen card" width="400"> <img src="docs/img/app-explain.png" alt="The explain card" width="400" align="top">
 </details>
 
 ## Quickstart
