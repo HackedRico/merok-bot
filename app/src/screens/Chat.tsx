@@ -26,6 +26,11 @@ export function Chat() {
 
   useEffect(() => {
     health().then(setStatus).catch((e) => setError(String(e)));
+    // `?say=...` runs a message on load, so a demo link or a screenshot lands on a real card, not an empty chat.
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const say = new URLSearchParams(window.location.search).get('say');
+      if (say) setTimeout(() => send(say), 300);
+    }
   }, []);
 
   useEffect(() => {

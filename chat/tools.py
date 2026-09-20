@@ -151,7 +151,8 @@ class Tools:
         else:
             kind = "paid replication" if e.template.spam.is_spam else "organic"
             head = f"It rides a template posted by {e.template.authors} accounts since {e.template.first_seen:%b %d %H:%M} UTC, {kind}."
-        return ToolResult(f"{head} {e.gloss}", (Attachment("explanation", to_json(e)),))
+        # The gloss lives on the card; the reply carries the one-line verdict so nothing is said twice.
+        return ToolResult(head, (Attachment("explanation", to_json(e)),))
 
     # -----------------------------------------------------------------
     # Draft and Score
