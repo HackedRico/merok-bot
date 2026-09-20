@@ -1,20 +1,17 @@
 <h1 align="center">merok-bot</h1>
 
+<p align="center"><strong>Post things that spread. See why they do.</strong></p>
+
 <p align="center">
-  <strong>A chat assistant that helps you post things that spread, and shows its work.</strong>
+  Every post is a bet placed blind. merok-bot watches a month of the X firehose for the patterns
+  people are copying right now, writes in your own voice on top of them, tells you how a draft
+  will do before you post it and why, and shows you the real curve afterwards.<br>
+  The finding underneath it: on X, the thing that spreads is not the post. It is the template.
 </p>
 
 <p align="center">
-  Developed for the Best Memetics Hack track at <a href="https://hophacks-fall-2026.devpost.com/">HopHacks 2026</a>,
-  Johns Hopkins University, September 18 to 20, on datasets from
-  <a href="https://www.calcifercomputing.com/hophacks">Calcifer Computing</a>.
-</p>
-
-<p align="center">
-  <a href="https://github.com/HackedRico/merok-bot/actions/workflows/ci.yml"><img src="https://github.com/HackedRico/merok-bot/actions/workflows/ci.yml/badge.svg" alt="ci"></a>
-  <img src="https://img.shields.io/badge/python-3.12-3776AB" alt="python 3.12">
-  <img src="https://img.shields.io/badge/expo-57-000020" alt="expo 57">
-  <img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="Apache 2.0">
+  <sub>Built for the Best Memetics Hack track at <a href="https://hophacks-fall-2026.devpost.com/">HopHacks 2026</a>, Johns Hopkins University, September 18 to 20,
+  on datasets from <a href="https://www.calcifercomputing.com/hophacks">Calcifer Computing</a>.</sub>
 </p>
 
 <p align="center">
