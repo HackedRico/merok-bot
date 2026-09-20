@@ -3,6 +3,7 @@ name = "merok-bot"
 version = "0.1.0"
 description = "A chat assistant that helps someone post things that spread, and shows its work. HopHacks 2026, memetics track."
 requires-python = ">=3.12,<3.13"
+license = "Apache-2.0"
 dependencies = [
     "duckdb>=1.1",
     "pyarrow>=17",
