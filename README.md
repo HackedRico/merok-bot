@@ -123,15 +123,31 @@ are in [docs/plan.md](docs/plan.md).
 ## Repository
 
 ```
-shared/     types, text, embeddings, config, the data seam, the model seam
-tools/      one directory per verb
-chat/       one message routes to one tool: rules first, the model second
-api/        FastAPI, the only place that reads config
-app/        Expo, one codebase for the browser and the phone
-analysis/   the two charts, computed by the same functions the app calls
-scripts/    data pulls, fixtures, a pressure test
-tests/      fixtures cut from the bucket; nothing here touches the network
-docs/       architecture, plan, prior art, pitch
+merok-bot/
+├── shared/                everything more than one tool needs
+│   ├── types.py           frozen values that cross tool lines
+│   ├── text.py            one normaliser for the whole app
+│   ├── embed.py           hashing by default, nomic-embed behind the same protocol
+│   ├── slang.py           the lexicon the government chart counts
+│   ├── config.py          environment to settings
+│   ├── data/              the lake seam: bucket, local cache, fixture
+│   └── llm/               the model seam: any OpenAI-compatible endpoint, or the offline fake
+├── tools/                 one directory per verb, each with a CLAUDE.md and a test
+│   ├── listen/            templates, curves, the spam verdict
+│   ├── explain/           match a post to a template, gloss it from the facts
+│   ├── draft/             retrieve exemplars, generate five, the Turing test
+│   ├── score/             features, the model, the author baseline
+│   ├── render/            script, voice, background, ffmpeg composition
+│   ├── ship/              X with OAuth 1.0a and a cap, clipboard, dry run
+│   └── learn/             live polling, replay, the comparison
+├── chat/                  one message routes to one tool: rules first, the model second
+├── api/                   FastAPI, the only place that reads config
+├── app/                   Expo, one codebase for the browser and the phone
+│   └── src/               api client, the chat screen, one card per attachment kind
+├── analysis/              the two charts, computed by the same functions the app calls
+├── scripts/               data pulls, fixtures, a pressure test
+├── tests/                 fixtures cut from the bucket; nothing here touches the network
+└── docs/                  architecture, plan, prior art, pitch
 ```
 
 Four Python packages at the repo root and one rule: a tool imports `shared` and nothing else
